@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📊 Stock Monitoring Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      font-size: 2.5em;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #666;
+      font-size: 1.1em;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .card h2 {
+      font-size: 1.5em;
+      color: #333;
+      margin-bottom: 15px;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-box .label {
+      font-size: 0.9em;
+      opacity: 0.9;
+      margin-bottom: 5px;
+    }
+
+    .stat-box .value {
+      font-size: 2em;
+      font-weight: bold;
+    }
+
+    .alert {
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border-left: 4px solid;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .alert-danger {
+      background: #fee;
+      border-left-color: #ef4444;
+      color: #c41e3a;
+    }
+
+    .alert-warning {
+      background: #fef3cd;
+      border-left-color: #ffca28;
+      color: #856404;
+    }
+
+    .alert-success {
+      background: #d4edda;
+      border-left-color: #4caf50;
+      color: #155724;
+    }
+
+    .alert-icon {
+      font-size: 1.5em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th {
+      background: #667eea;
+      color: white;
+      padding: 12px;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: center;
+    }
+
+    tr:hover {
+      background-color: #f0f0f0;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.9em;
+    }
+
+    .status-danger {
+      background: #fee;
+      color: #c41e3a;
+    }
+
+    .status-warning {
+      background: #fef3cd;
+      color: #856404;
+    }
+
+    .status-success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-info {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 400px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .no-alerts {
+      text-align: center;
+      padding: 30px;
+      color: #666;
+    }
+
+    .timestamp {
+      color: #999;
+      font-size: 0.9em;
+      text-align: right;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>📊 Stock Monitoring Dashboard</h1>
+      <p>ระบบการจัดการสต็อกและการเตือนสินค้า</p>
+      <div class="timestamp" id="timestamp"></div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="dashboard-grid">
+      <!-- Left Column -->
+      <div>
+        <!-- Statistics Cards -->
+        <div class="card">
+          <h2>📈 สถิติสต็อก</h2>
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="label">รวมทั้งหมด</div>
+              <div class="value" id="totalSKU">0</div>
+            </div>
+            <div class="stat-box">
+              <div class="label">สต็อกรวม</div>
+              <div class="value" id="totalStock">0</div>
+            </div>
+            <div class="stat-box">
+              <div class="label">สูงสุด</div>
+              <div class="value" id="maxStock">0</div>
+            </div>
+            <div class="stat-box">
+              <div class="label">ต่ำสุด</div>
+              <div class="value" id="minStock">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="card">
+          <h2>📊 แผนภูมิสต็อก</h2>
+          <div class="chart-container">
+            <canvas id="myChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div>
+        <!-- Alerts Section -->
+        <div class="card">
+          <h2>🔔 การเตือน</h2>
+          <div id="alerts"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Table -->
+    <div class="card">
+      <h2>📋 สรุปสินค้าทั้งหมด</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>รหัสสินค้า</th>
+            <th>ชื่อสินค้า</th>
+            <th>คงเหลือ</th>
+            <th>สถานะ</th>
+          </tr>
+        </thead>
+        <tbody id="summaryTable"></tbody>
+      </table>
+      <div class="timestamp" id="lastUpdate"></div>
+    </div>
+  </div>
+
+  <script>
+    // ข้อมูลสินค้า
+    const rawData = [
+      { code: "210503", name: "เส้นหมี่ปรุงรส", qty: 2659 },
+      { code: "210530", name: "เส้นหมี่ปรุงรส (30X6)", qty: 251 },
+      { code: "210520", name: "เส้นหมี่ปรุงรส (18X10)", qty: -58 },
+      { code: "210504", name: "เส้นหมี่หมูสับ", qty: 608 },
+      { code: "29050302", name: "เส้นหมี่ปรุงรสพม่า", qty: 8302 }
+    ];
+
+    // การตั้งค่าขีดจำกัด
+    const thresholds = {
+      negative: 0,
+      low: 100,
+      high: 5000
+    };
+
+    // ฟังก์ชันช่วยในการได้สถานะ
+    function getStatus(qty) {
+      if (qty < 0) return { 
+        text: "🔴 ติดลบ", 
+        cssClass: "status-danger",
+        alertClass: "alert-danger"
+      };
+      if (qty < thresholds.low) return { 
+        text: "🟡 ต่ำ", 
+        cssClass: "status-warning",
+        alertClass: "alert-warning"
+      };
+      if (qty > thresholds.high) return { 
+        text: "🟢 สูงมาก", 
+        cssClass: "status-success",
+        alertClass: "alert-success"
+      };
+      return { 
+        text: "🔵 ปกติ", 
+        cssClass: "status-info",
+        alertClass: "alert-info"
+      };
+    }
+
+    // ===============================
+    // 📊 สร้างแผนภูมิ
+    // ===============================
+    const labels = rawData.map(item => item.code);
+    const stockValues = rawData.map(item => item.qty);
+    const colors = stockValues.map(value => {
+      const status = getStatus(value);
+      if (value < 0) return '#ef4444';
+      if (value < 100) return '#ffca28';
+      if (value > 5000) return '#4caf50';
+      return '#36a2eb';
+    });
+
+    const ctx = document.getElementById('myChart').getContext('2d');
+    const chartConfig = {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'สต็อกคงเหลือ (หน่วย)',
+          data: stockValues,
+          backgroundColor: colors,
+          borderWidth: 2,
+          borderColor: '#333',
+          borderRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { 
+            beginAtZero: true,
+            ticks: {
+              font: { size: 12 }
+            }
+          },
+          x: {
+            ticks: {
+              font: { size: 12 }
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top'
+          }
+        }
+      }
+    };
+
+    new Chart(ctx, chartConfig);
+
+    // ===============================
+    // 📈 คำนวณสถิติ
+    // ===============================
+    const totalSKU = rawData.length;
+    const totalStock = rawData.reduce((sum, item) => sum + item.qty, 0);
+    const maxStock = Math.max(...rawData.map(item => item.qty));
+    const minStock = Math.min(...rawData.map(item => item.qty));
+
+    document.getElementById('totalSKU').textContent = totalSKU;
+    document.getElementById('totalStock').textContent = totalStock.toLocaleString('th-TH');
+    document.getElementById('maxStock').textContent = maxStock.toLocaleString('th-TH');
+    document.getElementById('minStock').textContent = minStock.toLocaleString('th-TH');
+
+    // ===============================
+    // 🔔 สร้างการเตือน
+    // ===============================
+    const alertsDiv = document.getElementById('alerts');
+    let alertsHTML = '';
+    let hasAlerts = false;
+
+    rawData.forEach(item => {
+      if (item.qty < 0) {
+        alertsHTML += `
+          <div class="alert alert-danger">
+            <span class="alert-icon">⚠️</span>
+            <div>
+              <strong>[${item.code}] ${item.name}</strong><br>
+              สต็อกติดลบ: ${item.qty} หน่วย - กรุณาตรวจสอบทันที
+            </div>
+          </div>
+        `;
+        hasAlerts = true;
+      } else if (item.qty < thresholds.low) {
+        alertsHTML += `
+          <div class="alert alert-warning">
+            <span class="alert-icon">⚠️</span>
+            <div>
+              <strong>[${item.code}] ${item.name}</strong><br>
+              สต็อกใกล้หมด: ${item.qty} หน่วย - กรุณาเติมสินค้า
+            </div>
+          </div>
+        `;
+        hasAlerts = true;
+      }
+    });
+
+    if (!hasAlerts) {
+      alertsHTML = `
+        <div class="alert alert-success">
+          <span class="alert-icon">✅</span>
+          <div><strong>ทั้งหมดปกติดี</strong> ทุกสินค้ามีสต็อกเพียงพอ</div>
+        </div>
+      `;
+    }
+
+    alertsDiv.innerHTML = alertsHTML;
+
+    // ===============================
+    // 📋 สร้างตารางสรุป
+    // ===============================
+    const tableBody = document.getElementById('summaryTable');
+    let tableHTML = '';
+
+    rawData.forEach(item => {
+      const status = getStatus(item.qty);
+      tableHTML += `
+        <tr>
+          <td><strong>${item.code}</strong></td>
+          <td>${item.name}</td>
+          <td><strong>${item.qty.toLocaleString('th-TH')}</strong></td>
+          <td><span class="status-badge ${status.cssClass}">${status.text}</span></td>
+        </tr>
+      `;
+    });
+
+    tableBody.innerHTML = tableHTML;
+
+    // ===============================
+    // 🕐 แสดงเวลาอัปเดต
+    // ===============================
+    function updateTimestamp() {
+      const now = new Date();
+      const thDate = now.toLocaleDateString('th-TH', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      const thTime = now.toLocaleTimeString('th-TH');
+      
+      document.getElementById('timestamp').textContent = `อัปเดตเมื่อ: ${thDate} เวลา ${thTime}`;
+      document.getElementById('lastUpdate').textContent = `ปรับปรุงล่าสุด: ${thDate} เวลา ${thTime}`;
+    }
+
+    updateTimestamp();
+    setInterval(updateTimestamp, 1000);
+  </script>
+
+</body>
+</html>
