@@ -119,6 +119,12 @@
       color: #155724;
     }
 
+    .alert-info {
+      background: #d1ecf1;
+      border-left-color: #17a2b8;
+      color: #0c5460;
+    }
+
     .alert-icon {
       font-size: 1.5em;
     }
@@ -352,7 +358,9 @@
         maintainAspectRatio: false,
         scales: {
           y: { 
-            beginAtZero: true,
+            beginAtZero: false,
+            suggestedMin: Math.min(...stockValues, 0) - 200,
+            suggestedMax: Math.max(...stockValues, thresholds.high) + 200,
             ticks: {
               font: { size: 12 }
             }
