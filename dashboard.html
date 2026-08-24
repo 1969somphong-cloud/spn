@@ -119,6 +119,12 @@
       color: #155724;
     }
 
+    .alert-info {
+      background: #d1ecf1;
+      border-left-color: #17a2b8;
+      color: #0c5460;
+    }
+
     .alert-icon {
       font-size: 1.5em;
     }
@@ -239,6 +245,18 @@
               <div class="label">ต่ำสุด</div>
               <div class="value" id="minStock">0</div>
             </div>
+            <div class="stat-box">
+              <div class="label">ติดลบ</div>
+              <div class="value" id="negativeCount">0</div>
+            </div>
+            <div class="stat-box">
+              <div class="label">สูงสุด</div>
+              <div class="value" id="topProduct">-</div>
+            </div>
+            <div class="stat-box">
+              <div class="label">ต่ำสุด</div>
+              <div class="value" id="lowProduct">-</div>
+            </div>
           </div>
         </div>
 
@@ -352,7 +370,9 @@
         maintainAspectRatio: false,
         scales: {
           y: { 
-            beginAtZero: true,
+            beginAtZero: false,
+            suggestedMin: Math.min(...stockValues, 0) - 200,
+            suggestedMax: Math.max(...stockValues, thresholds.high) + 200,
             ticks: {
               font: { size: 12 }
             }
@@ -381,11 +401,17 @@
     const totalStock = rawData.reduce((sum, item) => sum + item.qty, 0);
     const maxStock = Math.max(...rawData.map(item => item.qty));
     const minStock = Math.min(...rawData.map(item => item.qty));
+    const negativeCount = rawData.filter(item => item.qty < 0).length;
+    const maxItem = rawData.reduce((highest, item) => item.qty > highest.qty ? item : highest, rawData[0]);
+    const minItem = rawData.reduce((lowest, item) => item.qty < lowest.qty ? item : lowest, rawData[0]);
 
     document.getElementById('totalSKU').textContent = totalSKU;
     document.getElementById('totalStock').textContent = totalStock.toLocaleString('th-TH');
     document.getElementById('maxStock').textContent = maxStock.toLocaleString('th-TH');
     document.getElementById('minStock').textContent = minStock.toLocaleString('th-TH');
+    document.getElementById('negativeCount').textContent = negativeCount;
+    document.getElementById('topProduct').textContent = maxItem.name;
+    document.getElementById('lowProduct').textContent = minItem.name;
 
     // ===============================
     // 🔔 สร้างการเตือน
